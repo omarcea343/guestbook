@@ -27,7 +27,7 @@ export function Navigation() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Sparkles className="w-6 h-6 text-primary" />
-              <span className="font-bold text-xl text-foreground">Zenful Guestbook</span>
+              <span className="font-bold text-xl text-foreground">Zenbook</span>
             </div>
             <div className="w-8 h-8 bg-muted animate-pulse rounded-full"></div>
           </div>
@@ -42,13 +42,13 @@ export function Navigation() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Sparkles className="w-6 h-6 text-primary" />
-            <span className="font-bold text-xl text-foreground">Zenful Guestbook</span>
+            <span className="font-bold text-xl text-foreground">Zenbook</span>
           </div>
-          
+
           <div className="absolute left-1/2 transform -translate-x-1/2">
-            <a 
-              href="https://dreamsofcode.io" 
-              target="_blank" 
+            <a
+              href="https://dreamsofcode.io"
+              target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors"
             >
@@ -56,7 +56,7 @@ export function Navigation() {
               <span>by Dreams of Code</span>
             </a>
           </div>
-          
+
           <div className="flex items-center gap-4">
             {session && session.user.emailVerified ? (
               <DropdownMenu>
