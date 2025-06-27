@@ -26,41 +26,27 @@ export function NewMessageForm({ onSubmit }: NewMessageFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <div className="space-y-4">
-        <div className="relative">
-          <textarea
-            id="message"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder="Share your thoughts with the community..."
-            className="w-full px-4 py-3 bg-white/10 border border-input rounded-lg shadow-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none transition-all text-foreground"
-            rows={3}
-            maxLength={500}
-            disabled={isSubmitting}
-          />
-          <div className="absolute bottom-3 right-3 text-xs text-muted-foreground">
-            {message.length}/500
-          </div>
-        </div>
-        <Button
-          type="submit"
-          disabled={!message.trim() || isSubmitting}
-          className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/25"
-        >
-          {isSubmitting ? (
-            <>
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-white mr-2" />
-              Posting...
-            </>
-          ) : (
-            <>
-              <Send className="w-4 h-4 mr-2" />
-              Post Message
-            </>
-          )}
-        </Button>
-      </div>
+    <form onSubmit={handleSubmit} className="flex">
+      <input
+        type="text"
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+        placeholder="Leave a message"
+        className="flex-1 px-3 py-2 bg-white/10 border border-input rounded-l-lg placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all text-foreground border-r-0"
+        maxLength={200}
+        disabled={isSubmitting}
+      />
+      <Button
+        type="submit"
+        disabled={!message.trim() || isSubmitting}
+        className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/25 rounded-l-none border-l-0 h-auto py-2 px-4"
+      >
+        {isSubmitting ? (
+          <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+        ) : (
+          <Send className="w-4 h-4" />
+        )}
+      </Button>
     </form>
   );
 }

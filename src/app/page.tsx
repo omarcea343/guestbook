@@ -132,11 +132,7 @@ export default function Home() {
       <div className="relative max-w-4xl mx-auto px-4 py-8">
 
         {session && (
-          <div className="bg-white/5 backdrop-blur-sm p-8 rounded-2xl shadow-lg border border-white/10 mb-8">
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <MessageSquare className="w-5 h-5 text-primary" />
-              Leave a message
-            </h3>
+          <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-white/10 mb-8">
             {session.user.emailVerified ? (
               <NewMessageForm onSubmit={handleNewMessage} />
             ) : (
