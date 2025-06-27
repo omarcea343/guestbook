@@ -15,6 +15,7 @@ export async function getGuestbookEntries() {
       createdAt: guestbook.createdAt,
       username: user.username,
       displayUsername: user.displayUsername,
+      name: user.name,
     })
     .from(guestbook)
     .leftJoin(user, eq(guestbook.userId, user.id))

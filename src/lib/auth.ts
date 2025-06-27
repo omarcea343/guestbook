@@ -12,29 +12,26 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: true,
-  },
-  emailVerification: {
-    sendOnSignUp: true,
-    sendVerificationEmail: async ({ user, url }) => {
-      await resend.emails.send({
-        from: process.env.RESEND_FROM_EMAIL!,
-        to: user.email,
-        subject: "Verify your email address",
-        html: `<p>Click <a href="${url}">here</a> to verify your email address.</p>`,
-      });
-    },
+    requireEmailVerification: false, // Let users sign in even with unverified email
   },
   plugins: [
     username(),
     emailOTP({
+      sendVerificationOnSignUp: true,
       async sendVerificationOTP({ email, otp }) {
-        await resend.emails.send({
-          from: process.env.RESEND_FROM_EMAIL!,
-          to: email,
-          subject: "Your verification code",
-          html: `<p>Your verification code is: <strong>${otp}</strong></p>`,
-        });
+        console.log('Sending OTP email to:', email, 'OTP:', otp);
+        try {
+          const result = await resend.emails.send({
+            from: process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev',
+            to: email,
+            subject: "Your verification code",
+            html: `<p>Your verification code is: <strong>${otp}</strong></p>`,
+          });
+          console.log('Email sent successfully:', result);
+        } catch (error) {
+          console.error('Failed to send email:', error);
+          throw error;
+        }
       },
     }),
   ],

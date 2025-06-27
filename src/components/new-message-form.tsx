@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Send } from 'lucide-react';
 
 interface NewMessageFormProps {
   onSubmit: (message: string) => Promise<void>;
@@ -24,33 +26,40 @@ export function NewMessageForm({ onSubmit }: NewMessageFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="mb-8">
+    <form onSubmit={handleSubmit}>
       <div className="space-y-4">
-        <div>
-          <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
-            Leave a message
-          </label>
+        <div className="relative">
           <textarea
             id="message"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            placeholder="Share your thoughts..."
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+            placeholder="Share your thoughts with the community..."
+            className="w-full px-4 py-3 bg-white/10 border border-input rounded-lg shadow-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none transition-all text-foreground"
             rows={3}
             maxLength={500}
             disabled={isSubmitting}
           />
-          <div className="mt-1 text-xs text-gray-500 text-right">
+          <div className="absolute bottom-3 right-3 text-xs text-muted-foreground">
             {message.length}/500
           </div>
         </div>
-        <button
+        <Button
           type="submit"
           disabled={!message.trim() || isSubmitting}
-          className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/25"
         >
-          {isSubmitting ? 'Posting...' : 'Post Message'}
-        </button>
+          {isSubmitting ? (
+            <>
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-white mr-2" />
+              Posting...
+            </>
+          ) : (
+            <>
+              <Send className="w-4 h-4 mr-2" />
+              Post Message
+            </>
+          )}
+        </Button>
       </div>
     </form>
   );
