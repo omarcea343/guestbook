@@ -54,3 +54,11 @@ export const guestbook = pgTable('guestbook', {
   userId: text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
   createdAt: timestamp('created_at').$defaultFn(() => new Date()).notNull(),
 });
+
+export const userPreferences = pgTable('user_preferences', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+  ignoredUsers: text('ignored_users').$defaultFn(() => '[]').notNull(), // JSON array of ignored user IDs
+  createdAt: timestamp('created_at').$defaultFn(() => new Date()).notNull(),
+  updatedAt: timestamp('updated_at').$defaultFn(() => new Date()).notNull(),
+});

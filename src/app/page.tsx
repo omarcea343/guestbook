@@ -8,8 +8,10 @@ import { GuestbookEntry } from '@/components/guestbook-entry';
 import { NewMessageForm } from '@/components/new-message-form';
 import { Navigation } from '@/components/navigation';
 import { getGuestbookEntries, createGuestbookEntry } from '@/actions/guestbook';
+import { getUserPreferences, updateIgnoredUsers, getUserIdByUsername } from '@/actions/preferences';
 import { Button } from '@/components/ui/button';
-import { MessageSquare, Sparkles, KeyRound, RefreshCw } from 'lucide-react';
+import { MessageSquare, Sparkles, KeyRound, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 interface GuestbookEntryType {
   id: string;
@@ -18,47 +20,80 @@ interface GuestbookEntryType {
   username: string | null;
   displayUsername: string | null;
   name: string | null;
+  userId: string;
+}
+
+interface PaginationInfo {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
 }
 
 export default function Home() {
   const router = useRouter();
   const { data: session, isPending } = useSession();
-  const [entries, setEntries] = useState<GuestbookEntryType[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
+  
+  const [currentPage, setCurrentPage] = useState(1);
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [otpSentDuringSignup, setOtpSentDuringSignup] = useState(false);
   const [otp, setOtp] = useState('');
   const [otpLoading, setOtpLoading] = useState(false);
   const [otpError, setOtpError] = useState('');
+  const [showIgnored, setShowIgnored] = useState(false);
 
-  useEffect(() => {
-    loadEntries();
-  }, []);
+  // Fetch guestbook entries with pagination
+  const { data: guestbookData, isLoading } = useQuery({
+    queryKey: ['guestbook', currentPage],
+    queryFn: async () => {
+      const data = await getGuestbookEntries(currentPage, 50);
+      return {
+        entries: data.entries.map(entry => ({
+          ...entry,
+          createdAt: new Date(entry.createdAt),
+        })),
+        pagination: data.pagination,
+      };
+    },
+    enabled: true,
+  });
+
+  // Fetch user preferences
+  const { data: preferences } = useQuery({
+    queryKey: ['user-preferences'],
+    queryFn: getUserPreferences,
+    enabled: !!session?.user?.emailVerified,
+  });
+
+  // Mutation for updating ignored users
+  const updateIgnoredUsersMutation = useMutation({
+    mutationFn: updateIgnoredUsers,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-preferences'] });
+    },
+  });
+
+  // Mutation for creating new messages
+  const createMessageMutation = useMutation({
+    mutationFn: createGuestbookEntry,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['guestbook'] });
+    },
+  });
 
   // Check if user just signed up and needs verification
   useEffect(() => {
     if (session && !session.user.emailVerified) {
-      // If user has a session but email not verified, they likely just signed up
       setOtpSentDuringSignup(true);
       setShowOtpInput(true);
     }
   }, [session]);
 
-  const loadEntries = async () => {
-    try {
-      const data = await getGuestbookEntries();
-      setEntries(data.map(entry => ({
-        ...entry,
-        createdAt: new Date(entry.createdAt),
-      })));
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleNewMessage = async (message: string) => {
-    await createGuestbookEntry(message);
-    await loadEntries();
+    await createMessageMutation.mutateAsync(message);
   };
 
   const handleResendOtp = async () => {
@@ -103,6 +138,38 @@ export default function Home() {
     } finally {
       setOtpLoading(false);
     }
+  };
+
+  const handleUsernameAction = async (username: string, action: 'ignore') => {
+    if (action === 'ignore') {
+      const currentIgnored = preferences?.ignoredUsers || [];
+      const isCurrentlyIgnored = currentIgnored.includes(username);
+      
+      let newIgnored: string[];
+      if (isCurrentlyIgnored) {
+        newIgnored = currentIgnored.filter(u => u !== username);
+      } else {
+        newIgnored = [...currentIgnored, username];
+      }
+      
+      await updateIgnoredUsersMutation.mutateAsync(newIgnored);
+    }
+  };
+
+  const entries = guestbookData?.entries || [];
+  const pagination = guestbookData?.pagination;
+  const ignoredUsers = preferences?.ignoredUsers || [];
+
+  const filteredEntries = showIgnored 
+    ? entries 
+    : entries.filter(entry => {
+        const username = entry.displayUsername || entry.username || entry.name;
+        return !username || !ignoredUsers.includes(username);
+      });
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
 
@@ -223,6 +290,27 @@ export default function Home() {
 
         <div className="space-y-6">
           
+          {/* Filter Controls */}
+          {ignoredUsers.length > 0 && (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setShowIgnored(!showIgnored)}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors border ${
+                    showIgnored
+                      ? 'bg-amber-500/10 border-amber-500/20 text-amber-500 hover:bg-amber-500/20'
+                      : 'border-primary/20 text-primary hover:bg-primary/10'
+                  }`}
+                >
+                  {showIgnored ? 'Hide' : 'Show'} ignored users
+                </button>
+                <div className="text-sm text-muted-foreground">
+                  {ignoredUsers.length} user{ignoredUsers.length === 1 ? '' : 's'} ignored
+                </div>
+              </div>
+            </div>
+          )}
+          
           {isLoading ? (
             <div className="flex justify-center py-12">
               <div className="animate-pulse">
@@ -231,7 +319,7 @@ export default function Home() {
                 <div className="h-2 w-2 bg-primary rounded-full mx-1 inline-block animate-bounce" style={{ animationDelay: '0.4s' }}></div>
               </div>
             </div>
-          ) : entries.length === 0 ? (
+          ) : filteredEntries.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-muted-foreground text-lg">
                 No messages yet. Be the first to leave one!
@@ -239,7 +327,7 @@ export default function Home() {
             </div>
           ) : (
             <div className="grid gap-4">
-              {entries.map((entry, index) => (
+              {filteredEntries.map((entry, index) => (
                 <div
                   key={entry.id}
                   className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-white/10 transition-all hover:shadow-xl hover:shadow-primary/10 hover:scale-[1.02] hover:border-white/20"
@@ -250,11 +338,59 @@ export default function Home() {
                     message={entry.message}
                     username={entry.displayUsername || entry.username || entry.name}
                     createdAt={entry.createdAt}
+                    onUsernameAction={handleUsernameAction}
+                    isUserIgnored={ignoredUsers.includes(entry.displayUsername || entry.username || entry.name || '')}
                   />
                 </div>
               ))}
             </div>
           )}
+
+          {/* Pagination */}
+            {pagination && pagination.totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-8">
+                <Button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={!pagination.hasPrev}
+                  variant="outline"
+                  className="border-primary/20 hover:bg-primary/10"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
+                    .filter(page => 
+                      page === 1 || 
+                      page === pagination.totalPages || 
+                      Math.abs(page - currentPage) <= 1
+                    )
+                    .map((page, index, visiblePages) => (
+                      <div key={page} className="flex items-center">
+                        {index > 0 && visiblePages[index - 1] !== page - 1 && (
+                          <span className="text-muted-foreground px-2">...</span>
+                        )}
+                        <Button
+                          onClick={() => handlePageChange(page)}
+                          variant={page === currentPage ? "default" : "ghost"}
+                          className={page === currentPage ? "bg-primary text-primary-foreground" : "hover:bg-white/5"}
+                        >
+                          {page}
+                        </Button>
+                      </div>
+                    ))}
+                </div>
+                
+                <Button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={!pagination.hasNext}
+                  variant="outline"
+                  className="border-primary/20 hover:bg-primary/10"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
         </div>
       </div>
     </div>

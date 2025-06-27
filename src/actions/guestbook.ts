@@ -4,10 +4,12 @@ import { db } from '@/db';
 import { guestbook, user } from '@/db/schema';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
-import { desc, eq } from 'drizzle-orm';
+import { desc, eq, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 
-export async function getGuestbookEntries() {
+export async function getGuestbookEntries(page = 1, limit = 50) {
+  const offset = (page - 1) * limit;
+  
   const entries = await db
     .select({
       id: guestbook.id,
@@ -16,12 +18,69 @@ export async function getGuestbookEntries() {
       username: user.username,
       displayUsername: user.displayUsername,
       name: user.name,
+      userId: guestbook.userId,
     })
     .from(guestbook)
     .leftJoin(user, eq(guestbook.userId, user.id))
-    .orderBy(desc(guestbook.createdAt));
+    .orderBy(desc(guestbook.createdAt))
+    .limit(limit)
+    .offset(offset);
 
-  return entries;
+  // Get total count for pagination
+  const totalCount = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(guestbook);
+
+  return {
+    entries,
+    pagination: {
+      page,
+      limit,
+      total: totalCount[0].count,
+      totalPages: Math.ceil(totalCount[0].count / limit),
+      hasNext: page < Math.ceil(totalCount[0].count / limit),
+      hasPrev: page > 1,
+    }
+  };
+}
+
+export async function getUserPosts(userId: string, page = 1, limit = 50) {
+  const offset = (page - 1) * limit;
+  
+  const entries = await db
+    .select({
+      id: guestbook.id,
+      message: guestbook.message,
+      createdAt: guestbook.createdAt,
+      username: user.username,
+      displayUsername: user.displayUsername,
+      name: user.name,
+      userId: guestbook.userId,
+    })
+    .from(guestbook)
+    .leftJoin(user, eq(guestbook.userId, user.id))
+    .where(eq(guestbook.userId, userId))
+    .orderBy(desc(guestbook.createdAt))
+    .limit(limit)
+    .offset(offset);
+
+  // Get total count for this user
+  const totalCount = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(guestbook)
+    .where(eq(guestbook.userId, userId));
+
+  return {
+    entries,
+    pagination: {
+      page,
+      limit,
+      total: totalCount[0].count,
+      totalPages: Math.ceil(totalCount[0].count / limit),
+      hasNext: page < Math.ceil(totalCount[0].count / limit),
+      hasPrev: page > 1,
+    }
+  };
 }
 
 export async function createGuestbookEntry(message: string) {
