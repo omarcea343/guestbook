@@ -31,7 +31,7 @@ export function NewMessageForm({ onSubmit }: NewMessageFormProps) {
         type="text"
         value={message}
         onChange={(e) => setMessage(e.target.value)}
-        placeholder="Leave a message"
+        placeholder="Leave a nice message"
         className="flex-1 px-3 py-2 bg-white/10 border border-input rounded-l-lg placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all text-foreground border-r-0"
         maxLength={200}
         disabled={isSubmitting}
