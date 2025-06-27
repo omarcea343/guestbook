@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { authClient } from '@/lib/auth-client';
 import { Button } from '@/components/ui/button';
 import { Mail, Lock, User, AlertCircle, KeyRound, ArrowLeft } from 'lucide-react';
+import { validateUsername } from '@/lib/username-validation';
 
 interface AuthFormProps {
   onSuccess?: () => void;
@@ -18,13 +19,27 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
   const [otp, setOtp] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [usernameError, setUsernameError] = useState('');
   const [step, setStep] = useState<'auth' | 'verify'>('auth');
   const [pendingVerification, setPendingVerification] = useState(false);
+
+  const handleUsernameChange = (value: string) => {
+    setUsername(value);
+    setUsernameError('');
+    
+    if (!isLogin && value.length > 0) {
+      const validation = validateUsername(value);
+      if (!validation.isValid) {
+        setUsernameError(validation.error!);
+      }
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
+    setUsernameError('');
 
     try {
       if (step === 'auth') {
@@ -36,12 +51,19 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
           });
           onSuccess?.();
         } else {
+          // For signup, validate username first
+          const usernameValidation = validateUsername(username);
+          if (!usernameValidation.isValid) {
+            setUsernameError(usernameValidation.error!);
+            return;
+          }
+
           // For signup with OTP verification
           await authClient.signUp.email({
             email,
             password,
-            name: username,
-            username: username,
+            name: usernameValidation.sanitized!,
+            username: usernameValidation.sanitized!,
           });
           setStep('verify');
           setPendingVerification(true);
@@ -161,12 +183,22 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
                   id="username"
                   type="text"
                   value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-white/10 border border-input rounded-lg shadow-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all text-foreground"
+                  onChange={(e) => handleUsernameChange(e.target.value)}
+                  className={`w-full px-4 py-2.5 bg-white/10 border rounded-lg shadow-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 transition-all text-foreground ${
+                    usernameError 
+                      ? 'border-destructive focus:ring-destructive/30 focus:border-destructive' 
+                      : 'border-input focus:ring-primary/30 focus:border-primary'
+                  }`}
                   placeholder="username"
                   required
                   disabled={isLoading}
                 />
+                {usernameError && (
+                  <p className="text-sm text-destructive flex items-center gap-1 mt-1">
+                    <AlertCircle className="w-3 h-3" />
+                    {usernameError}
+                  </p>
+                )}
               </div>
             )}
 
