@@ -10,6 +10,7 @@ import { revalidatePath } from 'next/cache';
 export async function getGuestbookEntries(page = 1, limit = 50) {
   const offset = (page - 1) * limit;
   
+  // Get ALL entries (both main messages and replies) in chronological order
   const entries = await db
     .select({
       id: guestbook.id,
@@ -19,6 +20,7 @@ export async function getGuestbookEntries(page = 1, limit = 50) {
       displayUsername: user.displayUsername,
       name: user.name,
       userId: guestbook.userId,
+      replyToId: guestbook.replyToId,
     })
     .from(guestbook)
     .leftJoin(user, eq(guestbook.userId, user.id))
@@ -26,13 +28,41 @@ export async function getGuestbookEntries(page = 1, limit = 50) {
     .limit(limit)
     .offset(offset);
 
-  // Get total count for pagination
+  // For replies, we need to get the original message info
+  const entriesWithReplyInfo = await Promise.all(
+    entries.map(async (entry) => {
+      if (entry.replyToId) {
+        // This is a reply, get the original message info
+        const originalMessage = await db
+          .select({
+            id: guestbook.id,
+            message: guestbook.message,
+            username: user.username,
+            displayUsername: user.displayUsername,
+            name: user.name,
+          })
+          .from(guestbook)
+          .leftJoin(user, eq(guestbook.userId, user.id))
+          .where(eq(guestbook.id, entry.replyToId))
+          .limit(1);
+
+        return {
+          ...entry,
+          replyToMessage: originalMessage[0]?.message,
+          replyToUsername: originalMessage[0]?.displayUsername || originalMessage[0]?.username || originalMessage[0]?.name,
+        };
+      }
+      return entry;
+    })
+  );
+
+  // Get total count for pagination (all entries)
   const totalCount = await db
     .select({ count: sql<number>`count(*)` })
     .from(guestbook);
 
   return {
-    entries,
+    entries: entriesWithReplyInfo,
     pagination: {
       page,
       limit,
@@ -83,7 +113,7 @@ export async function getUserPosts(userId: string, page = 1, limit = 50) {
   };
 }
 
-export async function createGuestbookEntry(message: string) {
+export async function createGuestbookEntry(message: string, replyToId?: string) {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -95,6 +125,7 @@ export async function createGuestbookEntry(message: string) {
   await db.insert(guestbook).values({
     message,
     userId: session.user.id,
+    replyToId: replyToId || null,
   });
 
   revalidatePath('/');

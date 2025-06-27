@@ -21,6 +21,9 @@ interface GuestbookEntryType {
   displayUsername: string | null;
   name: string | null;
   userId: string;
+  replyToId: string | null;
+  replyToMessage?: string;
+  replyToUsername?: string | null;
 }
 
 interface PaginationInfo {
@@ -78,7 +81,8 @@ export default function Home() {
 
   // Mutation for creating new messages
   const createMessageMutation = useMutation({
-    mutationFn: createGuestbookEntry,
+    mutationFn: ({ message, replyToId }: { message: string; replyToId?: string }) => 
+      createGuestbookEntry(message, replyToId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['guestbook'] });
     },
@@ -93,7 +97,23 @@ export default function Home() {
   }, [session]);
 
   const handleNewMessage = async (message: string) => {
-    await createMessageMutation.mutateAsync(message);
+    await createMessageMutation.mutateAsync({ message });
+  };
+
+  const handleReply = async (messageId: string, replyText: string) => {
+    await createMessageMutation.mutateAsync({ message: replyText, replyToId: messageId });
+  };
+
+  const handleScrollToMessage = (messageId: string) => {
+    const element = document.getElementById(`message-${messageId}`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // Add a brief highlight effect
+      element.classList.add('ring-2', 'ring-primary/50');
+      setTimeout(() => {
+        element.classList.remove('ring-2', 'ring-primary/50');
+      }, 2000);
+    }
   };
 
   const handleResendOtp = async () => {
@@ -330,6 +350,7 @@ export default function Home() {
               {filteredEntries.map((entry, index) => (
                 <div
                   key={entry.id}
+                  id={`message-${entry.id}`}
                   className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-white/10 transition-all hover:shadow-xl hover:shadow-primary/10 hover:scale-[1.02] hover:border-white/20"
                   style={{ animationDelay: `${index * 0.1}s` }}
                 >
@@ -340,6 +361,12 @@ export default function Home() {
                     createdAt={entry.createdAt}
                     onUsernameAction={handleUsernameAction}
                     isUserIgnored={ignoredUsers.includes(entry.displayUsername || entry.username || entry.name || '')}
+                    onReply={session?.user?.emailVerified ? handleReply : undefined}
+                    onScrollToMessage={handleScrollToMessage}
+                    isReply={!!entry.replyToId}
+                    replyToUsername={entry.replyToUsername}
+                    replyToMessage={entry.replyToMessage}
+                    replyToMessageId={entry.replyToId}
                   />
                 </div>
               ))}
