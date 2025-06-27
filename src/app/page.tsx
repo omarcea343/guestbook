@@ -160,7 +160,7 @@ export default function Home() {
     }
   };
 
-  const handleUsernameAction = async (username: string, action: 'ignore') => {
+  const handleUsernameAction = async (username: string, action: 'ignore' | 'view-only') => {
     if (action === 'ignore') {
       const currentIgnored = preferences?.ignoredUsers || [];
       const isCurrentlyIgnored = currentIgnored.includes(username);
@@ -173,6 +173,8 @@ export default function Home() {
       }
       
       await updateIgnoredUsersMutation.mutateAsync(newIgnored);
+    } else if (action === 'view-only') {
+      router.push(`/user/${username}`);
     }
   };
 
@@ -364,9 +366,9 @@ export default function Home() {
                     onReply={session?.user?.emailVerified ? handleReply : undefined}
                     onScrollToMessage={handleScrollToMessage}
                     isReply={!!entry.replyToId}
-                    replyToUsername={entry.replyToUsername}
-                    replyToMessage={entry.replyToMessage}
-                    replyToMessageId={entry.replyToId}
+                    replyToUsername={'replyToUsername' in entry ? entry.replyToUsername : undefined}
+                    replyToMessage={'replyToMessage' in entry ? entry.replyToMessage : undefined}
+                    replyToMessageId={entry.replyToId || undefined}
                   />
                 </div>
               ))}

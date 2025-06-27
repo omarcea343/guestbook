@@ -52,7 +52,7 @@ export const guestbook = pgTable('guestbook', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   message: text('message').notNull(),
   userId: text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
-  replyToId: text('reply_to_id').references(() => guestbook.id, { onDelete: 'cascade' }),
+  replyToId: text('reply_to_id'),
   createdAt: timestamp('created_at').$defaultFn(() => new Date()).notNull(),
 });
 

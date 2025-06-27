@@ -3,6 +3,7 @@
 import { db } from '@/db';
 import { guestbook, user } from '@/db/schema';
 import { auth } from '@/lib/auth';
+import { validateMessageContent } from '@/lib/content-validation';
 import { headers } from 'next/headers';
 import { desc, eq, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
@@ -122,8 +123,20 @@ export async function createGuestbookEntry(message: string, replyToId?: string) 
     throw new Error('You must be signed in to post a message');
   }
 
+  const maxLength = replyToId ? 1000 : 200;
+  const validation = validateMessageContent(message, {
+    allowLinks: false,
+    allowProfanity: false,
+    maxLength,
+    minLength: 1,
+  });
+
+  if (!validation.isValid) {
+    throw new Error(validation.errors.join(', '));
+  }
+
   await db.insert(guestbook).values({
-    message,
+    message: validation.sanitizedContent!,
     userId: session.user.id,
     replyToId: replyToId || null,
   });

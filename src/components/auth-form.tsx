@@ -67,7 +67,7 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
     setError('');
     
     try {
-      await authClient.sendVerificationOTP({
+      await authClient.emailOtp.sendVerificationOtp({
         email,
         type: 'email-verification',
       });
