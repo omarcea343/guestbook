@@ -2,7 +2,7 @@
 nixPkgs = ["bun", "nodejs"]
 
 [phases.install]
-cmds = ["bun install"]
+cmds = ["bun install", "bun add -D lightningcss-linux-x64-gnu"]
 
 [phases.build]
 cmds = ["bun run build"]
