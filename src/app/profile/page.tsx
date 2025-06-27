@@ -225,46 +225,60 @@ export default function ProfilePage() {
         </div>
 
         {/* Ignored Users */}
-        {ignoredUsers.length > 0 && (
-          <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-white/10 mt-8">
-            <div className="flex items-center gap-3 mb-6">
-              <Eye className="w-5 h-5 text-primary" />
-              <h2 className="text-xl font-semibold text-foreground">Ignored Users</h2>
+        <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-white/10 mt-8">
+          <div className="flex items-center gap-3 mb-6">
+            <Eye className="w-5 h-5 text-primary" />
+            <h2 className="text-xl font-semibold text-foreground">Ignored Users</h2>
+            {ignoredUsers.length > 0 && (
               <span className="text-sm text-muted-foreground">
                 ({ignoredUsers.length} user{ignoredUsers.length === 1 ? '' : 's'})
               </span>
-            </div>
-            
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {ignoredUsers.map((username) => (
-                <div
-                  key={username}
-                  className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-muted to-muted-foreground flex items-center justify-center text-white text-sm font-semibold">
-                      {username[0].toUpperCase()}
-                    </div>
-                    <span className="text-foreground font-medium">{username}</span>
-                  </div>
-                  <Button
-                    onClick={() => handleUnignoreUser(username)}
-                    variant="ghost"
-                    size="sm"
-                    className="hover:bg-destructive/10 hover:text-destructive"
-                    disabled={updateIgnoredUsersMutation.isPending}
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-            
-            <p className="text-sm text-muted-foreground mt-4">
-              Messages from ignored users won't appear in your main feed. You can still visit their profiles directly.
-            </p>
+            )}
           </div>
-        )}
+          
+          {ignoredUsers.length > 0 ? (
+            <>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {ignoredUsers.map((username) => (
+                  <div
+                    key={username}
+                    className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-muted to-muted-foreground flex items-center justify-center text-white text-sm font-semibold">
+                        {username[0].toUpperCase()}
+                      </div>
+                      <span className="text-foreground font-medium">{username}</span>
+                    </div>
+                    <Button
+                      onClick={() => handleUnignoreUser(username)}
+                      variant="ghost"
+                      size="sm"
+                      className="hover:bg-destructive/10 hover:text-destructive"
+                      disabled={updateIgnoredUsersMutation.isPending}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              
+              <p className="text-sm text-muted-foreground mt-4">
+                Messages from ignored users won't appear in your main feed. You can still visit their profiles directly.
+              </p>
+            </>
+          ) : (
+            <div className="text-center py-8">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-white/5 flex items-center justify-center">
+                <Eye className="w-8 h-8 text-muted-foreground" />
+              </div>
+              <h3 className="text-lg font-medium text-foreground mb-2">No ignored users</h3>
+              <p className="text-muted-foreground text-sm max-w-md mx-auto">
+                You haven't ignored any users yet. When you ignore someone, they'll appear here and their messages will be hidden from your main feed.
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
