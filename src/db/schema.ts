@@ -47,3 +47,10 @@ export const verification = pgTable("verification", {
  createdAt: timestamp('created_at').$defaultFn(() => /* @__PURE__ */ new Date()),
  updatedAt: timestamp('updated_at').$defaultFn(() => /* @__PURE__ */ new Date())
 				});
+
+export const guestbook = pgTable('guestbook', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  message: text('message').notNull(),
+  userId: text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at').$defaultFn(() => new Date()).notNull(),
+});
