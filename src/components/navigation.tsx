@@ -9,8 +9,20 @@ import { AuthForm } from '@/components/auth-form';
 import { LogOut, User, Sparkles, Settings, ChevronDown } from 'lucide-react';
 
 export function Navigation() {
-  const { data: session, isPending } = useSession();
+  const { data: session, isPending, refetch: refetchSession } = useSession();
   const [showAuthModal, setShowAuthModal] = useState(false);
+
+  // Handle window focus to refresh session when user comes back from email
+  useEffect(() => {
+    const handleFocus = async () => {
+      if (session && !session.user.emailVerified) {
+        await refetchSession();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [session, refetchSession]);
 
 
   // Show auth modal if no session OR if session exists but email not verified
@@ -116,7 +128,8 @@ export function Navigation() {
                       Join the Community
                     </DialogTitle>
                   </DialogHeader>
-                  <AuthForm onSuccess={() => {
+                  <AuthForm onSuccess={async () => {
+                    await refetchSession();
                     setShowAuthModal(false);
                   }} />
                 </DialogContent>

@@ -37,7 +37,7 @@ interface PaginationInfo {
 
 export default function Home() {
   const router = useRouter();
-  const { data: session, isPending } = useSession();
+  const { data: session, isPending, refetch: refetchSession } = useSession();
   const queryClient = useQueryClient();
   
   const [currentPage, setCurrentPage] = useState(1);
@@ -96,6 +96,18 @@ export default function Home() {
     }
   }, [session]);
 
+  // Handle window focus to refresh session when user comes back from email
+  useEffect(() => {
+    const handleFocus = async () => {
+      if (session && !session.user.emailVerified) {
+        await refetchSession();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [session, refetchSession]);
+
   const handleNewMessage = async (message: string) => {
     await createMessageMutation.mutateAsync({ message });
   };
@@ -151,8 +163,11 @@ export default function Home() {
       setShowOtpInput(false);
       setOtpSentDuringSignup(false);
       
-      // Refresh the page to update session state
-      router.refresh();
+      // Refetch session to get updated emailVerified status
+      await refetchSession();
+      
+      // Invalidate and refetch all queries to ensure fresh data
+      queryClient.invalidateQueries();
     } catch (err) {
       setOtpError(err instanceof Error ? err.message : 'Invalid verification code');
     } finally {
