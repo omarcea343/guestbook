@@ -21,7 +21,6 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
   const [error, setError] = useState('');
   const [usernameError, setUsernameError] = useState('');
   const [step, setStep] = useState<'auth' | 'verify'>('auth');
-  const [pendingVerification, setPendingVerification] = useState(false);
 
   const handleUsernameChange = (value: string) => {
     setUsername(value);
@@ -66,7 +65,6 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
             username: usernameValidation.sanitized!,
           });
           setStep('verify');
-          setPendingVerification(true);
           return; // Explicitly return to avoid any fallthrough
         }
       } else {

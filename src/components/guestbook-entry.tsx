@@ -30,7 +30,7 @@ export function GuestbookEntry({
   onReply,
   isReply = false,
   replyToUsername,
-  replyToMessage,
+  replyToMessage: _replyToMessage,
   replyToMessageId,
   onScrollToMessage
 }: GuestbookEntryProps) {

@@ -23,13 +23,12 @@ export async function getUserPreferences() {
 
   if (prefs.length === 0) {
     // Create default preferences
-    const newPrefs = await db
+    await db
       .insert(userPreferences)
       .values({
         userId: session.user.id,
         ignoredUsers: '[]',
-      })
-      .returning();
+      });
     
     return {
       ignoredUsers: [],

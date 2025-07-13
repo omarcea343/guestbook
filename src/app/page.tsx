@@ -8,32 +8,11 @@ import { GuestbookEntry } from '@/components/guestbook-entry';
 import { NewMessageForm } from '@/components/new-message-form';
 import { Navigation } from '@/components/navigation';
 import { getGuestbookEntries, createGuestbookEntry } from '@/actions/guestbook';
-import { getUserPreferences, updateIgnoredUsers, getUserIdByUsername } from '@/actions/preferences';
+import { getUserPreferences, updateIgnoredUsers } from '@/actions/preferences';
 import { Button } from '@/components/ui/button';
-import { MessageSquare, Sparkles, KeyRound, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
+import { MessageSquare, KeyRound, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
-interface GuestbookEntryType {
-  id: string;
-  message: string;
-  createdAt: Date;
-  username: string | null;
-  displayUsername: string | null;
-  name: string | null;
-  userId: string;
-  replyToId: string | null;
-  replyToMessage?: string;
-  replyToUsername?: string | null;
-}
-
-interface PaginationInfo {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
-  hasNext: boolean;
-  hasPrev: boolean;
-}
 
 export default function Home() {
   const router = useRouter();
@@ -85,6 +64,12 @@ export default function Home() {
       createGuestbookEntry(message, replyToId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['guestbook'] });
+    },
+    onError: (error) => {
+      // If error is about email verification, show the OTP input
+      if (error.message.includes('verify your email')) {
+        setShowOtpInput(true);
+      }
     },
   });
 

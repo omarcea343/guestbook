@@ -123,6 +123,10 @@ export async function createGuestbookEntry(message: string, replyToId?: string) 
     throw new Error('You must be signed in to post a message');
   }
 
+  if (!session.user.emailVerified) {
+    throw new Error('You must verify your email address before posting messages');
+  }
+
   const maxLength = replyToId ? 1000 : 200;
   const validation = validateMessageContent(message, {
     allowLinks: false,
