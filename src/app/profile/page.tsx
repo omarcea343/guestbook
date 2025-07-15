@@ -264,7 +264,7 @@ export default function ProfilePage() {
               </div>
               
               <p className="text-sm text-muted-foreground mt-4">
-                Messages from ignored users won't appear in your main feed. You can still visit their profiles directly.
+                Messages from ignored users won&apos;t appear in your main feed. You can still visit their profiles directly.
               </p>
             </>
           ) : (
@@ -274,7 +274,7 @@ export default function ProfilePage() {
               </div>
               <h3 className="text-lg font-medium text-foreground mb-2">No ignored users</h3>
               <p className="text-muted-foreground text-sm max-w-md mx-auto">
-                You haven't ignored any users yet. When you ignore someone, they'll appear here and their messages will be hidden from your main feed.
+                You haven&apos;t ignored any users yet. When you ignore someone, they&apos;ll appear here and their messages will be hidden from your main feed.
               </p>
             </div>
           )}

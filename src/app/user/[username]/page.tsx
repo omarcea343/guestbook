@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from '@/lib/auth-client';
 import { GuestbookEntry } from '@/components/guestbook-entry';
@@ -57,11 +57,7 @@ export default function UserPage() {
     },
   });
 
-  useEffect(() => {
-    loadUserPosts(currentPage);
-  }, [username, currentPage]);
-
-  const loadUserPosts = async (page: number) => {
+  const loadUserPosts = useCallback(async (page: number) => {
     try {
       setIsLoading(true);
       
@@ -83,7 +79,11 @@ export default function UserPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [router, username]);
+
+  useEffect(() => {
+    loadUserPosts(currentPage);
+  }, [currentPage, loadUserPosts]);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -192,7 +192,7 @@ export default function UserPage() {
               <p className="font-medium">You are currently ignoring this user</p>
             </div>
             <p className="text-amber-500/80 text-sm mt-1">
-              Their messages won't appear in your filtered view on the main page.
+              Their messages won&apos;t appear in your filtered view on the main page.
             </p>
           </div>
         )}
@@ -202,7 +202,7 @@ export default function UserPage() {
           {entries.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-muted-foreground text-lg">
-                {username} hasn't posted any messages yet.
+                {username} hasn&apos;t posted any messages yet.
               </p>
             </div>
           ) : (

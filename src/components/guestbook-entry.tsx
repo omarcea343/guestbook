@@ -15,7 +15,6 @@ interface GuestbookEntryProps {
   onReply?: (messageId: string, replyText: string) => void;
   isReply?: boolean;
   replyToUsername?: string | null;
-  replyToMessage?: string;
   replyToMessageId?: string;
   onScrollToMessage?: (messageId: string) => void;
 }
@@ -30,7 +29,6 @@ export function GuestbookEntry({
   onReply,
   isReply = false,
   replyToUsername,
-  replyToMessage: _replyToMessage,
   replyToMessageId,
   onScrollToMessage
 }: GuestbookEntryProps) {
@@ -89,7 +87,7 @@ export function GuestbookEntry({
                   className="flex items-center gap-2"
                 >
                   <Eye className="w-4 h-4" />
-                  View {username}'s profile
+                  View {username}&apos;s profile
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => onUsernameAction?.(username, 'ignore')}

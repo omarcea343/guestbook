@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession, signOut } from '@/lib/auth-client';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AuthForm } from '@/components/auth-form';
 import { LogOut, User, Sparkles, Settings, ChevronDown } from 'lucide-react';
@@ -25,8 +25,6 @@ export function Navigation() {
   }, [session, refetchSession]);
 
 
-  // Show auth modal if no session OR if session exists but email not verified
-  const shouldShowAuthModal = showAuthModal && (!session || !session.user.emailVerified);
 
   const handleSignOut = async () => {
     await signOut();
@@ -71,7 +69,8 @@ export function Navigation() {
 
           <div className="flex items-center gap-4">
             {session && session.user.emailVerified ? (
-              <DropdownMenu>
+              <>
+                <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="flex items-center gap-3 hover:bg-white/5">
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-semibold text-sm">
@@ -108,33 +107,30 @@ export function Navigation() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+              </>
             ) : (
-              <Dialog open={shouldShowAuthModal} onOpenChange={(open) => {
-                // Only allow closing if email is verified or user explicitly closes
-                if (!open && session && !session.user.emailVerified) {
-                  return;
-                }
-                setShowAuthModal(open);
-              }}>
-                <DialogTrigger asChild>
-                  <Button className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 shadow-lg shadow-primary/25">
-                    <User className="w-4 h-4 mr-2" />
-                    Sign In
-                  </Button>
-                </DialogTrigger>
+              <Button 
+                onClick={() => setShowAuthModal(true)}
+                className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 shadow-lg shadow-primary/25">
+                <User className="w-4 h-4 mr-2" />
+                Sign In
+              </Button>
+            )}
+            
+            <Dialog open={showAuthModal} onOpenChange={setShowAuthModal}>
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle className="text-center text-xl font-bold">
                       Join the Community
                     </DialogTitle>
                   </DialogHeader>
-                  <AuthForm onSuccess={async () => {
-                    await refetchSession();
-                    setShowAuthModal(false);
-                  }} />
+                  <AuthForm 
+                    onSuccess={async () => {
+                      setShowAuthModal(false);
+                      await refetchSession();
+                    }} />
                 </DialogContent>
               </Dialog>
-            )}
           </div>
         </div>
       </div>

@@ -22,7 +22,7 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
   const handleUsernameChange = (value: string) => {
     setUsername(value);
     setUsernameError('');
-    
+
     if (!isLogin && value.length > 0) {
       const validation = validateUsername(value);
       if (!validation.isValid) {
@@ -37,43 +37,52 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
     setError('');
     setUsernameError('');
 
-    try {
-      if (isLogin) {
-        // For login, sign in directly
-        await authClient.signIn.email({
-          email,
-          password,
-        });
-        onSuccess?.();
-      } else {
-        // For signup, validate username first
-        const usernameValidation = validateUsername(username);
-        if (!usernameValidation.isValid) {
-          setUsernameError(usernameValidation.error!);
-          return;
-        }
+    if (isLogin) {
+      const { error } = await authClient.signIn.email({
+        email,
+        password,
+      });
 
-        // For signup with automatic login
-        await authClient.signUp.email({
-          email,
-          password,
-          name: usernameValidation.sanitized!,
-          username: usernameValidation.sanitized!,
-        });
-        
-        // Automatically sign in the user after successful signup
-        await authClient.signIn.email({
-          email,
-          password,
-        });
-        
-        onSuccess?.();
+      if (error) {
+        setError(error.message || 'Something went wrong');
+        setIsLoading(false);
+        return;
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setIsLoading(false);
+    } else {
+      const usernameValidation = validateUsername(username);
+      if (!usernameValidation.isValid) {
+        setUsernameError(usernameValidation.error!);
+        setIsLoading(false);
+        return;
+      }
+
+      const { error: signUpError } = await authClient.signUp.email({
+        email,
+        password,
+        name: usernameValidation.sanitized!,
+        username: usernameValidation.sanitized!,
+      });
+
+      if (signUpError) {
+        setError(signUpError.message || 'Something went wrong');
+        setIsLoading(false);
+        return;
+      }
+
+      const { error: signInError } = await authClient.signIn.email({
+        email,
+        password,
+      });
+
+      if (signInError) {
+        setError(signInError.message || 'Something went wrong');
+        setIsLoading(false);
+        return;
+      }
     }
+
+    onSuccess?.();
+    setIsLoading(false);
   };
 
 
@@ -81,7 +90,11 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
     <div className="space-y-6">
       <div className="flex rounded-lg bg-white/5 border border-white/10 p-1">
           <button
-            onClick={() => setIsLogin(true)}
+            onClick={() => {
+              setIsLogin(true);
+              setError('');
+              setUsernameError('');
+            }}
             className={`flex-1 py-2 px-4 text-sm font-medium rounded-md transition-all ${
               isLogin
                 ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/25'
@@ -91,7 +104,11 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
             Sign In
           </button>
           <button
-            onClick={() => setIsLogin(false)}
+            onClick={() => {
+              setIsLogin(false);
+              setError('');
+              setUsernameError('');
+            }}
             className={`flex-1 py-2 px-4 text-sm font-medium rounded-md transition-all ${
               !isLogin
                 ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/25'
@@ -140,8 +157,8 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
                   value={username}
                   onChange={(e) => handleUsernameChange(e.target.value)}
                   className={`w-full px-4 py-2.5 bg-white/10 border rounded-lg shadow-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 transition-all text-foreground ${
-                    usernameError 
-                      ? 'border-destructive focus:ring-destructive/30 focus:border-destructive' 
+                    usernameError
+                      ? 'border-destructive focus:ring-destructive/30 focus:border-destructive'
                       : 'border-input focus:ring-primary/30 focus:border-primary'
                   }`}
                   placeholder="username"
