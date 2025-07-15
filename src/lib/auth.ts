@@ -12,12 +12,12 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: false, // Let users sign in even with unverified email
+    requireEmailVerification: false, // Allow automatic login after signup
   },
   plugins: [
     username(),
     emailOTP({
-      sendVerificationOnSignUp: true,
+      sendVerificationOnSignUp: true, // Send verification emails on signup
       async sendVerificationOTP({ email, otp }) {
         console.log('Sending OTP email to:', email, 'OTP:', otp);
         try {
