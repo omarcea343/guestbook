@@ -367,7 +367,6 @@ export default function Home() {
                     onScrollToMessage={handleScrollToMessage}
                     isReply={!!entry.replyToId}
                     replyToUsername={'replyToUsername' in entry ? entry.replyToUsername : undefined}
-                    replyToMessage={'replyToMessage' in entry ? entry.replyToMessage : undefined}
                     replyToMessageId={entry.replyToId || undefined}
                   />
                 </div>
