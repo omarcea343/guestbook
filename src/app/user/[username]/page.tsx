@@ -233,10 +233,11 @@ export default function UserPage() {
                     variant="outline"
                     className="border-primary/20 hover:bg-primary/10"
                   >
-                    <ChevronLeft className="w-4 h-4" />
+                    <ChevronLeft className="w-4 h-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Previous</span>
                   </Button>
                   
-                  <div className="flex items-center gap-1">
+                  <div className="hidden sm:flex items-center gap-1">
                     {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
                       .filter(page => 
                         page === 1 || 
@@ -265,7 +266,8 @@ export default function UserPage() {
                     variant="outline"
                     className="border-primary/20 hover:bg-primary/10"
                   >
-                    <ChevronRight className="w-4 h-4" />
+                    <span className="hidden sm:inline">Next</span>
+                    <ChevronRight className="w-4 h-4 sm:ml-2" />
                   </Button>
                 </div>
               )}

@@ -10,7 +10,8 @@ import { Navigation } from '@/components/navigation';
 import { getGuestbookEntries, createGuestbookEntry } from '@/actions/guestbook';
 import { getUserPreferences, updateIgnoredUsers } from '@/actions/preferences';
 import { Button } from '@/components/ui/button';
-import { MessageSquare, KeyRound, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
+import { MessageSquare, KeyRound, RefreshCw, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 
@@ -26,6 +27,7 @@ export default function Home() {
   const [otpLoading, setOtpLoading] = useState(false);
   const [otpError, setOtpError] = useState('');
   const [showIgnored, setShowIgnored] = useState(false);
+  const [showNewMessageModal, setShowNewMessageModal] = useState(false);
 
   // Fetch guestbook entries with pagination
   const { data: guestbookData, isLoading } = useQuery({
@@ -221,7 +223,7 @@ export default function Home() {
       <div className="relative max-w-4xl mx-auto px-4 py-8">
 
         {session && (
-          <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-white/10 mb-8">
+          <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-white/10 mb-8 hidden sm:block">
             {session.user.emailVerified ? (
               <NewMessageForm onSubmit={handleNewMessage} />
             ) : (
@@ -421,6 +423,27 @@ export default function Home() {
             )}
         </div>
       </div>
+
+      <Dialog open={showNewMessageModal} onOpenChange={setShowNewMessageModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Leave a new message</DialogTitle>
+          </DialogHeader>
+          <NewMessageForm onSubmit={async (message) => {
+            await handleNewMessage(message);
+            setShowNewMessageModal(false);
+          }} />
+        </DialogContent>
+      </Dialog>
+
+      {session?.user?.emailVerified && (
+        <Button
+          onClick={() => setShowNewMessageModal(true)}
+          className="sm:hidden fixed bottom-4 right-4 h-16 w-16 rounded-full bg-primary shadow-lg flex items-center justify-center"
+        >
+          <Plus className="h-8 w-8" />
+        </Button>
+      )}
     </div>
   );
 }

@@ -77,7 +77,7 @@ export function GuestbookEntry({
           {username ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="font-medium text-primary hover:text-primary/80 transition-colors">
+                <button className="font-medium text-primary hover:text-primary/80 transition-colors p-2 -m-2">
                   {username}
                 </button>
               </DropdownMenuTrigger>
@@ -116,7 +116,7 @@ export function GuestbookEntry({
         {onReply && (
           <button
             onClick={() => setShowReplyForm(!showReplyForm)}
-            className="text-xs text-muted-foreground hover:text-primary transition-colors px-2 py-1 rounded flex items-center gap-1 opacity-70 hover:opacity-100"
+            className="text-xs text-muted-foreground hover:text-primary transition-colors px-3 py-2 rounded flex items-center gap-1 opacity-70 hover:opacity-100 -m-2"
           >
             <Reply className="w-3 h-3" />
             Reply
