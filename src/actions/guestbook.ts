@@ -10,7 +10,7 @@ import { revalidatePath } from 'next/cache';
 
 export async function getGuestbookEntries(page = 1, limit = 50) {
   const offset = (page - 1) * limit;
-  
+
   // Get ALL entries (both main messages and replies) in chronological order
   const entries = await db
     .select({
@@ -77,7 +77,7 @@ export async function getGuestbookEntries(page = 1, limit = 50) {
 
 export async function getUserPosts(userId: string, page = 1, limit = 50) {
   const offset = (page - 1) * limit;
-  
+
   const entries = await db
     .select({
       id: guestbook.id,

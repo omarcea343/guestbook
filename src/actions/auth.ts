@@ -4,8 +4,34 @@ import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import bcrypt from 'bcryptjs';
 import { db } from '@/db';
-import { account } from '@/db/schema';
+import { account, user } from '@/db/schema';
 import { eq } from 'drizzle-orm';
+import { validateUsername } from '@/lib/username-validation';
+
+export async function signUpWithEmail(email: string, password: string, username: string) {
+    const validation = validateUsername(username);
+    if (!validation.isValid) {
+        throw new Error(validation.error);
+    }
+
+    // Check if username already exists
+    const existingUser = await db
+        .select()
+        .from(user)
+        .where(eq(user.username, validation.sanitized!))
+        .limit(1);
+    
+    if (existingUser.length > 0) {
+        throw new Error('Username already taken');
+    }
+
+    return await auth.api.signUp.email({
+        email,
+        password,
+        name: validation.sanitized!,
+        username: validation.sanitized!,
+    });
+}
 
 export async function changePassword(currentPassword: string, newPassword: string) {
   const session = await auth.api.getSession({

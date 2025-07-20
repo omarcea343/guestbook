@@ -82,13 +82,7 @@ export function GuestbookEntry({
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start">
-                <DropdownMenuItem
-                  onClick={() => window.location.href = `/user/${username}`}
-                  className="flex items-center gap-2"
-                >
-                  <Eye className="w-4 h-4" />
-                  View {username}&apos;s profile
-                </DropdownMenuItem>
+                
                 <DropdownMenuItem
                   onClick={() => onUsernameAction?.(username, 'ignore')}
                   className="flex items-center gap-2"

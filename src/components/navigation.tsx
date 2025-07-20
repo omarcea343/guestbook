@@ -68,7 +68,7 @@ export function Navigation() {
           </div>
 
           <div className="flex items-center gap-4">
-            {session && session.user.emailVerified ? (
+            {session?.user ? (
               <>
                 <DropdownMenu>
                 <DropdownMenuTrigger asChild>

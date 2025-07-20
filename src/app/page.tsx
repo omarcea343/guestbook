@@ -12,6 +12,7 @@ import { getUserPreferences, updateIgnoredUsers } from '@/actions/preferences';
 import { Button } from '@/components/ui/button';
 import { MessageSquare, KeyRound, RefreshCw, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AuthForm } from '@/components/auth-form';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 
@@ -28,6 +29,7 @@ export default function Home() {
   const [otpError, setOtpError] = useState('');
   const [showIgnored, setShowIgnored] = useState(false);
   const [showNewMessageModal, setShowNewMessageModal] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   // Fetch guestbook entries with pagination
   const { data: guestbookData, isLoading } = useQuery({
@@ -163,6 +165,11 @@ export default function Home() {
   };
 
   const handleUsernameAction = async (username: string, action: 'ignore' | 'view-only') => {
+    if (!session) {
+      setShowAuthModal(true);
+      return;
+    }
+
     if (action === 'ignore') {
       const currentIgnored = preferences?.ignoredUsers || [];
       const isCurrentlyIgnored = currentIgnored.includes(username);
@@ -432,6 +439,18 @@ export default function Home() {
           <NewMessageForm onSubmit={async (message) => {
             await handleNewMessage(message);
             setShowNewMessageModal(false);
+          }} />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showAuthModal} onOpenChange={setShowAuthModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-center text-xl font-bold">Sign in to ignore users</DialogTitle>
+          </DialogHeader>
+          <AuthForm onSuccess={() => {
+            setShowAuthModal(false);
+            refetchSession();
           }} />
         </DialogContent>
       </Dialog>

@@ -4,7 +4,7 @@ import { db } from '@/db';
 import { userPreferences, user } from '@/db/schema';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 
 export async function getUserPreferences() {
   const session = await auth.api.getSession({
@@ -35,18 +35,37 @@ export async function getUserPreferences() {
     };
   }
 
+  const ignoredUserIds = JSON.parse(prefs[0].ignoredUsers) as string[];
+  if (ignoredUserIds.length === 0) {
+    return { ignoredUsers: [] };
+  }
+
+  const ignoredUsernames = await db
+    .select({ username: user.username })
+    .from(user)
+    .where(inArray(user.id, ignoredUserIds));
+
   return {
-    ignoredUsers: JSON.parse(prefs[0].ignoredUsers) as string[],
+    ignoredUsers: ignoredUsernames.map(u => u.username),
   };
 }
 
-export async function updateIgnoredUsers(ignoredUserIds: string[]) {
+export async function updateIgnoredUsers(ignoredUsernames: string[]) {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
 
   if (!session) {
     throw new Error('You must be signed in to update preferences');
+  }
+
+  let ignoredUserIds: string[] = [];
+  if (ignoredUsernames.length > 0) {
+    const ignoredUsers = await db
+      .select({ id: user.id })
+      .from(user)
+      .where(inArray(user.username, ignoredUsernames));
+    ignoredUserIds = ignoredUsers.map(u => u.id);
   }
 
   // Check if preferences exist

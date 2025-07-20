@@ -1,3 +1,5 @@
+import { isProfane } from '@/lib/profanity-filter';
+
 export interface UsernameValidationResult {
   isValid: boolean;
   error?: string;
@@ -54,6 +56,13 @@ export function validateUsername(username: string): UsernameValidationResult {
     return {
       isValid: false,
       error: 'Username cannot start or end with underscores or hyphens'
+    };
+  }
+
+  if (isProfane(trimmed)) {
+    return {
+      isValid: false,
+      error: 'Username contains inappropriate language'
     };
   }
 

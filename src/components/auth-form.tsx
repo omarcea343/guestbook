@@ -5,6 +5,7 @@ import { authClient } from '@/lib/auth-client';
 import { Button } from '@/components/ui/button';
 import { Mail, Lock, User, AlertCircle } from 'lucide-react';
 import { validateUsername } from '@/lib/username-validation';
+import { signUpWithEmail } from '@/actions/auth';
 
 interface AuthFormProps {
   onSuccess?: () => void;
@@ -56,18 +57,18 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
         return;
       }
 
-      const { error: signUpError } = await authClient.signUp.email({
-        email,
-        password,
-        name: usernameValidation.sanitized!,
-        username: usernameValidation.sanitized!,
-      });
-
-      if (signUpError) {
+      try {
+        await signUpWithEmail(
+          email,
+          password,
+          usernameValidation.sanitized!,
+        );
+      } catch (signUpError: any) {
         setError(signUpError.message || 'Something went wrong');
         setIsLoading(false);
         return;
       }
+
 
       const { error: signInError } = await authClient.signIn.email({
         email,
