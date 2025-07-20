@@ -46,7 +46,7 @@ export async function getUserPreferences() {
     .where(inArray(user.id, ignoredUserIds));
 
   return {
-    ignoredUsers: ignoredUsernames.map(u => u.username),
+    ignoredUsers: ignoredUsernames.map(u => u.username).filter((username): username is string => username !== null),
   };
 }
 

@@ -25,11 +25,13 @@ export async function signUpWithEmail(email: string, password: string, username:
         throw new Error('Username already taken');
     }
 
-    return await auth.api.signUp.email({
-        email,
-        password,
-        name: validation.sanitized!,
-        username: validation.sanitized!,
+    return await auth.api.signUpEmail({
+        body: {
+            email,
+            password,
+            name: validation.sanitized!,
+            username: validation.sanitized!,
+        }
     });
 }
 
