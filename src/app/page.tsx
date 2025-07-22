@@ -27,6 +27,8 @@ export default function Home() {
   const [otp, setOtp] = useState('');
   const [otpLoading, setOtpLoading] = useState(false);
   const [otpError, setOtpError] = useState('');
+  const [lastOtpSentTime, setLastOtpSentTime] = useState<number | null>(null);
+  const [resendCooldown, setResendCooldown] = useState(0);
   const [showIgnored, setShowIgnored] = useState(false);
   const [showNewMessageModal, setShowNewMessageModal] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -82,8 +84,13 @@ export default function Home() {
     if (session && !session.user.emailVerified) {
       setOtpSentDuringSignup(true);
       setShowOtpInput(true);
+      // Set initial cooldown since OTP was just sent during signup
+      if (!lastOtpSentTime) {
+        setLastOtpSentTime(Date.now());
+        setResendCooldown(RESEND_COOLDOWN_MINUTES * 60);
+      }
     }
-  }, [session]);
+  }, [session, lastOtpSentTime]);
 
   // Handle window focus to refresh session when user comes back from email
   useEffect(() => {
@@ -96,6 +103,23 @@ export default function Home() {
     window.addEventListener('focus', handleFocus);
     return () => window.removeEventListener('focus', handleFocus);
   }, [session, refetchSession]);
+
+  // Update resend cooldown timer
+  useEffect(() => {
+    if (resendCooldown > 0) {
+      const timer = setInterval(() => {
+        setResendCooldown(prev => {
+          if (prev <= 1) {
+            setOtpError(''); // Clear error when cooldown expires
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      
+      return () => clearInterval(timer);
+    }
+  }, [resendCooldown]);
 
   const handleNewMessage = async (message: string) => {
     await createMessageMutation.mutateAsync({ message });
@@ -117,8 +141,22 @@ export default function Home() {
     }
   };
 
+  const RESEND_COOLDOWN_MINUTES = 2; // Cooldown period in minutes
+
   const handleResendOtp = async () => {
     if (!session?.user.email) return;
+    
+    // Check if still in cooldown period
+    if (lastOtpSentTime) {
+      const timeSinceLastSend = Date.now() - lastOtpSentTime;
+      const cooldownMs = RESEND_COOLDOWN_MINUTES * 60 * 1000;
+      
+      if (timeSinceLastSend < cooldownMs) {
+        const remainingSeconds = Math.ceil((cooldownMs - timeSinceLastSend) / 1000);
+        setOtpError(`Please wait ${Math.ceil(remainingSeconds / 60)} minute${Math.ceil(remainingSeconds / 60) > 1 ? 's' : ''} before resending`);
+        return;
+      }
+    }
     
     setOtpLoading(true);
     setOtpError('');
@@ -130,6 +168,8 @@ export default function Home() {
       });
       setShowOtpInput(true);
       setOtpSentDuringSignup(false); // Mark as manually sent
+      setLastOtpSentTime(Date.now());
+      setResendCooldown(RESEND_COOLDOWN_MINUTES * 60); // Set cooldown in seconds
     } catch (err) {
       setOtpError(err instanceof Error ? err.message : 'Failed to send OTP');
     } finally {
@@ -285,10 +325,13 @@ export default function Home() {
                     <div className="text-center">
                       <button
                         onClick={handleResendOtp}
-                        disabled={otpLoading}
+                        disabled={otpLoading || resendCooldown > 0}
                         className="text-sm text-primary hover:text-primary/80 underline disabled:opacity-50"
                       >
-                        {otpSentDuringSignup ? "Didn't receive it? Resend code" : "Resend code"}
+                        {resendCooldown > 0 
+                          ? `Resend code in ${Math.ceil(resendCooldown / 60)}:${String(resendCooldown % 60).padStart(2, '0')}`
+                          : (otpSentDuringSignup ? "Didn't receive it? Resend code" : "Resend code")
+                        }
                       </button>
                     </div>
                   </div>
@@ -296,7 +339,7 @@ export default function Home() {
                   <div className="text-center">
                     <Button
                       onClick={handleResendOtp}
-                      disabled={otpLoading}
+                      disabled={otpLoading || resendCooldown > 0}
                       variant="outline"
                       className="border-primary/20 hover:bg-primary/10"
                     >
@@ -304,6 +347,11 @@ export default function Home() {
                         <>
                           <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary/20 border-t-primary mr-2" />
                           Sending...
+                        </>
+                      ) : resendCooldown > 0 ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 mr-2" />
+                          Resend in {Math.ceil(resendCooldown / 60)}:{String(resendCooldown % 60).padStart(2, '0')}
                         </>
                       ) : (
                         <>
