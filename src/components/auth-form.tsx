@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { authClient } from '@/lib/auth-client';
 import { Button } from '@/components/ui/button';
 import { Mail, Lock, User, AlertCircle } from 'lucide-react';
 import { validateUsername } from '@/lib/username-validation';
 import { signUpWithEmail } from '@/actions/auth';
+import Turnstile, { TurnstileInstance } from 'react-turnstile';
 
 interface AuthFormProps {
   onSuccess?: () => void;
@@ -19,6 +20,8 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [usernameError, setUsernameError] = useState('');
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileInstance>(null);
 
   const handleUsernameChange = (value: string) => {
     setUsername(value);
@@ -38,10 +41,21 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
     setError('');
     setUsernameError('');
 
+    if (!captchaToken) {
+      setError('Please complete the captcha');
+      setIsLoading(false);
+      return;
+    }
+
     if (isLogin) {
       const { error } = await authClient.signIn.email({
         email,
         password,
+        fetchOptions: {
+          headers: {
+            'x-captcha-response': captchaToken,
+          },
+        },
       });
 
       if (error) {
@@ -61,6 +75,7 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
         email,
         password,
         usernameValidation.sanitized!,
+        captchaToken,
       );
 
       if (signUpResult.error) {
@@ -73,6 +88,11 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
       const { error: signInError } = await authClient.signIn.email({
         email,
         password,
+        fetchOptions: {
+          headers: {
+            'x-captcha-response': captchaToken,
+          },
+        },
       });
 
       if (signInError) {
@@ -95,6 +115,8 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
               setIsLogin(true);
               setError('');
               setUsernameError('');
+              setCaptchaToken(null);
+              turnstileRef.current?.reset();
             }}
             className={`flex-1 py-2 px-4 text-sm font-medium rounded-md transition-all ${
               isLogin
@@ -109,6 +131,8 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
               setIsLogin(false);
               setError('');
               setUsernameError('');
+              setCaptchaToken(null);
+              turnstileRef.current?.reset();
             }}
             className={`flex-1 py-2 px-4 text-sm font-medium rounded-md transition-all ${
               !isLogin
@@ -192,6 +216,16 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
               />
             </div>
           </>
+
+        <div className="flex justify-center my-4">
+          <Turnstile
+            ref={turnstileRef}
+            sitekey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!}
+            onVerify={(token) => setCaptchaToken(token)}
+            onExpire={() => setCaptchaToken(null)}
+            theme="dark"
+          />
+        </div>
 
         <div className="pt-2">
           <Button

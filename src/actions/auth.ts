@@ -8,7 +8,7 @@ import { account, user } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { validateUsername } from '@/lib/username-validation';
 
-export async function signUpWithEmail(email: string, password: string, username: string) {
+export async function signUpWithEmail(email: string, password: string, username: string, captchaToken: string) {
     try {
         const validation = validateUsername(username);
         if (!validation.isValid) {
@@ -32,6 +32,9 @@ export async function signUpWithEmail(email: string, password: string, username:
                 password,
                 name: validation.sanitized!,
                 username: validation.sanitized!,
+            },
+            headers: {
+                'x-captcha-response': captchaToken,
             }
         });
 

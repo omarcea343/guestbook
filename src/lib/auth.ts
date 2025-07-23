@@ -1,6 +1,6 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { username, emailOTP } from "better-auth/plugins";
+import { username, emailOTP, captcha } from "better-auth/plugins";
 import { Resend } from "resend";
 import { db } from "@/db";
 import { user } from "@/db/schema";
@@ -44,6 +44,10 @@ export const auth = betterAuth({
           throw error;
         }
       },
+    }),
+    captcha({
+      provider: "cloudflare-turnstile",
+      secretKey: process.env.TURNSTILE_SECRET_KEY!,
     }),
   ],
 });
