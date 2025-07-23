@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Mail, Lock, User, AlertCircle } from 'lucide-react';
 import { validateUsername } from '@/lib/username-validation';
 import { signUpWithEmail } from '@/actions/auth';
-import Turnstile from 'react-turnstile';
+import { Turnstile } from '@marsidev/react-turnstile';
+import type { TurnstileInstance } from '@marsidev/react-turnstile';
 
 interface AuthFormProps {
   onSuccess?: () => void;
@@ -22,8 +23,7 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
   const [usernameError, setUsernameError] = useState('');
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [showCaptcha, setShowCaptcha] = useState(false);
-  const [resetKey, setResetKey] = useState(0);
-  const turnstileRef = useRef<any>(null);
+  const turnstileRef = useRef<TurnstileInstance | null>(null);
 
   const handleUsernameChange = (value: string) => {
     setUsername(value);
@@ -62,7 +62,7 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
         password,
         fetchOptions: {
           headers: {
-            'x-captcha-response': captchaToken,
+            'x-captcha-response': captchaToken || '',
           },
         },
       });
@@ -73,7 +73,7 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
         // Hide captcha and reset for next attempt
         setShowCaptcha(false);
         setCaptchaToken(null);
-        setResetKey(prev => prev + 1);
+        turnstileRef.current?.reset();
         return;
       }
     } else {
@@ -88,7 +88,7 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
         email,
         password,
         usernameValidation.sanitized!,
-        captchaToken,
+        captchaToken || '',
       );
 
       if (signUpResult.error) {
@@ -97,7 +97,7 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
         // Hide captcha and reset for next attempt
         setShowCaptcha(false);
         setCaptchaToken(null);
-        setResetKey(prev => prev + 1);
+        turnstileRef.current?.reset();
         return;
       }
 
@@ -107,7 +107,7 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
         password,
         fetchOptions: {
           headers: {
-            'x-captcha-response': captchaToken,
+            'x-captcha-response': captchaToken || '',
           },
         },
       });
@@ -118,7 +118,7 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
         // Hide captcha and reset for next attempt
         setShowCaptcha(false);
         setCaptchaToken(null);
-        setResetKey(prev => prev + 1);
+        turnstileRef.current?.reset();
         return;
       }
     }
@@ -128,7 +128,7 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
     // Hide captcha after successful submission
     setShowCaptcha(false);
     setCaptchaToken(null);
-    setResetKey(prev => prev + 1);
+    turnstileRef.current?.reset();
   };
 
 
@@ -245,10 +245,10 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
         {showCaptcha && (
           <div className="flex flex-col items-center gap-2 my-4">
             <Turnstile
-              key={`turnstile-${isLogin ? 'login' : 'signup'}-${resetKey}`}
+              key={`turnstile-${isLogin ? 'login' : 'signup'}`}
               ref={turnstileRef}
-              sitekey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!}
-              onVerify={(token) => {
+              siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!}
+              onSuccess={(token) => {
                 setCaptchaToken(token);
                 setError(''); // Clear any previous errors when captcha is verified
                 // Auto-submit the form once captcha is verified
@@ -265,13 +265,11 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
               onError={() => {
                 setCaptchaToken(null);
               }}
-              onBeforeInteractive={() => {
-                setCaptchaToken(null);
+              options={{
+                theme: 'dark',
+                refreshExpired: 'auto',
+                appearance: 'always'
               }}
-              theme="dark"
-              retry="auto"
-              refreshExpired="auto"
-              appearance="always"
             />
             {captchaToken && (
               <p className="text-xs text-green-500">✓ Captcha verified</p>
