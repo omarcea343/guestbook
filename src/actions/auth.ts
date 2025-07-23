@@ -15,6 +15,17 @@ export async function signUpWithEmail(email: string, password: string, username:
             return { error: validation.error };
         }
 
+        // Check if email already exists
+        const existingEmail = await db
+            .select()
+            .from(user)
+            .where(eq(user.email, email))
+            .limit(1);
+        
+        if (existingEmail.length > 0) {
+            return { error: 'An account with this email already exists. Please sign in instead.' };
+        }
+
         // Check if username already exists
         const existingUser = await db
             .select()
@@ -41,6 +52,10 @@ export async function signUpWithEmail(email: string, password: string, username:
         return { data: result, error: null };
     } catch (error: any) {
         console.error('Signup error:', error);
+        // Handle Better Auth specific errors
+        if (error.code === 'USER_ALREADY_EXISTS' || error.message?.includes('already exists')) {
+            return { error: 'An account with this email already exists. Please sign in instead.' };
+        }
         return { 
             error: error.message || 'An error occurred during signup. Please try again.' 
         };
