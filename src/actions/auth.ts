@@ -9,30 +9,39 @@ import { eq } from 'drizzle-orm';
 import { validateUsername } from '@/lib/username-validation';
 
 export async function signUpWithEmail(email: string, password: string, username: string) {
-    const validation = validateUsername(username);
-    if (!validation.isValid) {
-        throw new Error(validation.error);
-    }
-
-    // Check if username already exists
-    const existingUser = await db
-        .select()
-        .from(user)
-        .where(eq(user.username, validation.sanitized!))
-        .limit(1);
-    
-    if (existingUser.length > 0) {
-        throw new Error('Username already taken');
-    }
-
-    return await auth.api.signUpEmail({
-        body: {
-            email,
-            password,
-            name: validation.sanitized!,
-            username: validation.sanitized!,
+    try {
+        const validation = validateUsername(username);
+        if (!validation.isValid) {
+            return { error: validation.error };
         }
-    });
+
+        // Check if username already exists
+        const existingUser = await db
+            .select()
+            .from(user)
+            .where(eq(user.username, validation.sanitized!))
+            .limit(1);
+        
+        if (existingUser.length > 0) {
+            return { error: 'Username already taken' };
+        }
+
+        const result = await auth.api.signUpEmail({
+            body: {
+                email,
+                password,
+                name: validation.sanitized!,
+                username: validation.sanitized!,
+            }
+        });
+
+        return { data: result, error: null };
+    } catch (error: any) {
+        console.error('Signup error:', error);
+        return { 
+            error: error.message || 'An error occurred during signup. Please try again.' 
+        };
+    }
 }
 
 export async function changePassword(currentPassword: string, newPassword: string) {

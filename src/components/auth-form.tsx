@@ -57,14 +57,14 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
         return;
       }
 
-      try {
-        await signUpWithEmail(
-          email,
-          password,
-          usernameValidation.sanitized!,
-        );
-      } catch (signUpError: any) {
-        setError(signUpError.message || 'Something went wrong');
+      const signUpResult = await signUpWithEmail(
+        email,
+        password,
+        usernameValidation.sanitized!,
+      );
+
+      if (signUpResult.error) {
+        setError(signUpResult.error);
         setIsLoading(false);
         return;
       }
