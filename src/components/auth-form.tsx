@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Mail, Lock, User, AlertCircle } from 'lucide-react';
 import { validateUsername } from '@/lib/username-validation';
 import { signUpWithEmail } from '@/actions/auth';
-import Turnstile, { TurnstileInstance } from 'react-turnstile';
+import Turnstile from 'react-turnstile';
 
 interface AuthFormProps {
   onSuccess?: () => void;
@@ -21,7 +21,9 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
   const [error, setError] = useState('');
   const [usernameError, setUsernameError] = useState('');
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
-  const turnstileRef = useRef<TurnstileInstance>(null);
+  const [showCaptcha, setShowCaptcha] = useState(false);
+  const [resetKey, setResetKey] = useState(0);
+  const turnstileRef = useRef<any>(null);
 
   const handleUsernameChange = (value: string) => {
     setUsername(value);
@@ -37,15 +39,22 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     setError('');
     setUsernameError('');
 
-    if (!captchaToken) {
-      setError('Please complete the captcha');
-      setIsLoading(false);
+    // Show captcha on first submit attempt
+    if (!showCaptcha) {
+      setShowCaptcha(true);
       return;
     }
+
+    // If captcha is shown but no token, wait for captcha completion
+    if (showCaptcha && !captchaToken) {
+      setError('Please complete the captcha');
+      return;
+    }
+
+    setIsLoading(true);
 
     if (isLogin) {
       const { error } = await authClient.signIn.email({
@@ -61,6 +70,10 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
       if (error) {
         setError(error.message || 'Something went wrong');
         setIsLoading(false);
+        // Hide captcha and reset for next attempt
+        setShowCaptcha(false);
+        setCaptchaToken(null);
+        setResetKey(prev => prev + 1);
         return;
       }
     } else {
@@ -81,6 +94,10 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
       if (signUpResult.error) {
         setError(signUpResult.error);
         setIsLoading(false);
+        // Hide captcha and reset for next attempt
+        setShowCaptcha(false);
+        setCaptchaToken(null);
+        setResetKey(prev => prev + 1);
         return;
       }
 
@@ -98,12 +115,20 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
       if (signInError) {
         setError(signInError.message || 'Something went wrong');
         setIsLoading(false);
+        // Hide captcha and reset for next attempt
+        setShowCaptcha(false);
+        setCaptchaToken(null);
+        setResetKey(prev => prev + 1);
         return;
       }
     }
 
     onSuccess?.();
     setIsLoading(false);
+    // Hide captcha after successful submission
+    setShowCaptcha(false);
+    setCaptchaToken(null);
+    setResetKey(prev => prev + 1);
   };
 
 
@@ -115,8 +140,8 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
               setIsLogin(true);
               setError('');
               setUsernameError('');
+              setShowCaptcha(false);
               setCaptchaToken(null);
-              turnstileRef.current?.reset();
             }}
             className={`flex-1 py-2 px-4 text-sm font-medium rounded-md transition-all ${
               isLogin
@@ -131,8 +156,8 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
               setIsLogin(false);
               setError('');
               setUsernameError('');
+              setShowCaptcha(false);
               setCaptchaToken(null);
-              turnstileRef.current?.reset();
             }}
             className={`flex-1 py-2 px-4 text-sm font-medium rounded-md transition-all ${
               !isLogin
@@ -217,15 +242,42 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
             </div>
           </>
 
-        <div className="flex justify-center my-4">
-          <Turnstile
-            ref={turnstileRef}
-            sitekey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!}
-            onVerify={(token) => setCaptchaToken(token)}
-            onExpire={() => setCaptchaToken(null)}
-            theme="dark"
-          />
-        </div>
+        {showCaptcha && (
+          <div className="flex flex-col items-center gap-2 my-4">
+            <Turnstile
+              key={`turnstile-${isLogin ? 'login' : 'signup'}-${resetKey}`}
+              ref={turnstileRef}
+              sitekey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!}
+              onVerify={(token) => {
+                setCaptchaToken(token);
+                setError(''); // Clear any previous errors when captcha is verified
+                // Auto-submit the form once captcha is verified
+                setTimeout(() => {
+                  const form = document.querySelector('form');
+                  if (form) {
+                    form.requestSubmit();
+                  }
+                }, 100);
+              }}
+              onExpire={() => {
+                setCaptchaToken(null);
+              }}
+              onError={() => {
+                setCaptchaToken(null);
+              }}
+              onBeforeInteractive={() => {
+                setCaptchaToken(null);
+              }}
+              theme="dark"
+              retry="auto"
+              refreshExpired="auto"
+              appearance="always"
+            />
+            {captchaToken && (
+              <p className="text-xs text-green-500">✓ Captcha verified</p>
+            )}
+          </div>
+        )}
 
         <div className="pt-2">
           <Button
