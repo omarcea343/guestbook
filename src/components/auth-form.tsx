@@ -44,7 +44,7 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
 
     // Show captcha on first submit attempt
     if (!showCaptcha) {
-      setShowCaptcha(false);
+      setShowCaptcha(true);
       return;
     }
 
